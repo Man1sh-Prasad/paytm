@@ -5,6 +5,7 @@ import bcrypt, { hash } from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import { JWT_SECRET } from "../config.js";
 import { authMiddleware } from "../middlewares/authMiddleware.js";
+import { Account } from "../models/account.model.js";
 
 const router = Router();
 
@@ -45,11 +46,18 @@ router.post('/signup', async (req, res) => {
 
     const userId = newUser._id;
 
+    // create new account and give balance between 1 to 10000
+    const newAccount = await Account.create({
+        userId: userId,
+        balance: Math.random() * 10000
+    })
+
     const token =  jwt.sign({ userId }, JWT_SECRET);
 
     return res.status(200).json({
         message: "User created succesfully",
-        token: token
+        token: token,
+        balance: newAccount.balance
     });
 });
 
