@@ -16,4 +16,4 @@ export const updateSchema = z.object({
     firstname: z.string().optional(),
     lastname: z.string().optional(),
     password: z.string().min(8).optional()
-})
+}).strict();
