@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { User } from '../models/user.model.js'
-import { signinSchema, userSchema } from "../types.js";
+import { signinSchema, updateSchema, userSchema } from "../types.js";
 import bcrypt, { hash } from 'bcrypt'
 import jwt from 'jsonwebtoken'
 import { JWT_SECRET } from "../config.js";
@@ -26,7 +26,7 @@ router.post('/signup', async (req, res) => {
         return res.status(411).json({
             message: 'Email already taken'
         })
-    }
+     }
 
     // hash password
     const saltRounds = 10;
@@ -74,9 +74,63 @@ router.post('/signin', authMiddleware, async (req, res) => {
         return res.status(411).json({
             message: "Error while logging in"
         })
+    }   
+})
+
+//update
+router.put('/', authMiddleware, async (req, res) => {
+    const response = updateSchema.safeParse(req.body);
+    if(!response.success) {
+        return res.status(411).json({
+            message: "Error while updating information. Please provide valid inputs"
+        })
     }
 
-    
+    const userId = req.userId;  // we are getting this userId from authMiddleware
+
+    const updateUser = await User.findByIdAndUpdate(userId, req.body)
+    if(updateUser) {
+        return res.status(200).json({
+            message: "Updated Successfully"
+        })
+    } else {
+        return res.status(411).json({
+            message: "Error while updating information"
+        })
+    }
+})
+
+// get user from backend via firstname or last name 
+router.get('/bulk', authMiddleware, async (req, res) => {
+    const filter = req.query.filter;
+
+    const users = await User.find({
+        $or: [
+            {firstname: filter},
+            {lastname: filter}
+        ]
+    })
+
+    // if(users) {
+    //     const userInfo = users.map(user => {
+    //         const { _id, firstname, lastname } = user;
+    //         return { _id, firstname, lastname }
+    //     })
+    //     return res.status(200).json({
+    //         users: userInfo
+    //     })
+    // }
+
+    if(users) {
+        res.json({
+            user: users.map(user => ({
+                username: user.username,
+                firstname: user.firstname,
+                lastname: user.lastname,
+                _id: user._id
+            }))
+        })
+    }
 })
 
 export default router;

@@ -9,9 +9,8 @@ export const authMiddleware = (req, res, next) => {
 
     const jwtToken = authHeader.split(" ")[1];
 
-    const decodedUser = jwt.verify(jwtToken, JWT_SECRET)
-
     try {
+        const decodedUser = jwt.verify(jwtToken, JWT_SECRET)
         if(decodedUser.userId) {
             req.userId = decodedUser.userId;        // putting userId in req object
             next();
@@ -20,7 +19,7 @@ export const authMiddleware = (req, res, next) => {
                 message: "Error while logging in"
             })
         }
-    } catch(error) {
+    } catch(error) { 
         return res.status(411).json({
             message: "Something went wrong",
             error
