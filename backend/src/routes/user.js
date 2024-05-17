@@ -40,7 +40,7 @@ router.post('/signup', async (req, res) => {
     const newUser = await User.create({
         username: req.body.username,
         firstname: req.body.firstname,
-        lastname: req.body.username,
+        lastname: req.body.lastname,
         password: hashPassword
     })
 
@@ -62,12 +62,12 @@ router.post('/signup', async (req, res) => {
 });
 
 // signin 
-router.post('/signin', authMiddleware, async (req, res) => {
+router.post('/signin', async (req, res) => {
     // validate input 
     const response = signinSchema.safeParse(req.body);
     if(!response.success) {
-        return res.status(411).json({
-            message: "Invalid Inputs"
+        return res.status(401).json({
+            message: "Invalid username or password"
         })
     }
 
@@ -75,11 +75,22 @@ router.post('/signin', authMiddleware, async (req, res) => {
     const user = await User.findOne({
         username: req.body.username
     })
-    if(user) {
-        const userToken = jwt.sign(req.userId, JWT_SECRET)
+    if(!user) {
+        return res.status(401).json({
+            message: "Invalid username or password"
+        })
+    }
+
+    // verify password
+    const hashPassword = user.password      // password from database
+    const plainTextPassword = req.body.password     // password given by the user
+
+    const isPasswordCorrect = await bcrypt.compare(plainTextPassword, hashPassword)
+    if(isPasswordCorrect) {
+        const userToken = jwt.sign({userId: user._id}, JWT_SECRET)
         return res.status(200).json({token: userToken})
     } else {
-        return res.status(411).json({
+        return res.status(401).json({
             message: "Error while logging in"
         })
     }   
